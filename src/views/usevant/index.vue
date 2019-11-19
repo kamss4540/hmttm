@@ -1,13 +1,11 @@
 <template>
-  <div id="app">
-    <router-view></router-view>
+  <div class="usevant">
+    <h3>这里是vant</h3>
   </div>
 </template>
 
 <script>
-export default {
-
-}
+export default {}
 </script>
 
 <style>
