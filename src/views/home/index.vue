@@ -20,22 +20,32 @@
         <van-tabs v-model="active" swipeable sticky @click="onClick">
           <van-tab v-for="(item,index) in channels" :key="index" :title="item.name">
             active {{ active }}
-            <van-list v-model="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
-              <van-cell v-for="(item,index) in channels[index]" :key="index" :title="item.title">
-                <!-- <template slot="label">
-                  <van-grid v-if="item.cover.type > 0" :border="false" :column-num="3">
-                    <van-grid-item v-for="(imgitem,imgindex) in item.cover.images" :key="imgindex">
-                      <van-image :src="imgitem" />
-                    </van-grid-item>
-                  </van-grid>
-                  <div>
-                    <span class="mr">{{item.aut_name}}</span>
-                    <span class="mr">{{item.comm_count}} 评论</span>
-                    <span class="mr">{{item.pubdate}}</span>
-                  </div>
-                </template> -->
-              </van-cell>
-            </van-list>
+            <van-pull-refresh v-model="item.isLoading" @refresh="onRefresh">
+              <van-list
+                v-model="item.loading"
+                :finished="item.finished"
+                finished-text="没有更多了"
+                @load="onLoad"
+              >
+                <van-cell v-for="item in item.aList" :key="item.art_id" :title="item.title">
+                  <template slot="label">
+                    <van-grid v-if="item.cover.type > 0" :border="false" :column-num="3">
+                      <van-grid-item
+                        v-for="(imgitem,imgindex) in item.cover.images"
+                        :key="imgindex"
+                      >
+                        <van-image :src="imgitem" />
+                      </van-grid-item>
+                    </van-grid>
+                    <div>
+                      <span class="mr">{{item.aut_name}}</span>
+                      <span class="mr">{{item.comm_count}} 评论</span>
+                      <span class="mr">{{item.pubdate}}</span>
+                    </div>
+                  </template>
+                </van-cell>
+              </van-list>
+            </van-pull-refresh>
           </van-tab>
         </van-tabs>
       </div>
@@ -56,11 +66,7 @@ export default {
       value: "",
       icon: "\ue600 搜索",
       active: "",
-      channels: [],
-      list: [],
-      loading: false,
-      finished: false,
-      timestamp: null
+      channels: []
     };
   },
   methods: {
@@ -70,21 +76,33 @@ export default {
     onCancel() {
       console.log(2);
     },
+    onRefresh() {
+      console.log("下拉");
+      let channelList = this.channels[this.active];
+      // 重置当前频道下的所有数据
+      channelList.loading = false;
+      channelList.finished = false;
+      channelList.aList = [];
+      channelList.timestamp = null;
+      channelList.isLoading = false;
+      // 重新请求数据
+      this.onLoad();
+    },
     async onLoad() {
-      
       let channelId = this.channels[this.active].id;
-      let channelList = this.channels[this.active]
-      let timestamp = this.timestamp ? this.timestamp : Date.now();
+      let channelList = this.channels[this.active];
+      let timestamp = channelList.timestamp
+        ? channelList.timestamp
+        : Date.now();
       let res = await apiGetArticles({ channelId, timestamp });
       if (res.results.length === 0) {
-        this.finished = true;
+        channelList.finished = true;
       }
-
-      channelList = [...channelList.list, ...res.results];
+      channelList.aList = [...channelList.aList, ...res.results];
+      channelList.timestamp = res.pre_timestamp;
       console.log(channelList);
 
-      this.timestamp = res.pre_timestamp;
-      this.loading = false;
+      channelList.loading = false;
 
       // // 异步更新数据
       // setTimeout(() => {
@@ -104,17 +122,14 @@ export default {
       let res = await apiGetChannels();
       this.channels = res.channels;
       this.channels.forEach(item => {
-        item.loading = false;
-        item.finished = false;
-        item.isLoading = false;
-        item.list = []
+        this.$set(item, "loading", false);
+        this.$set(item, "finished", false);
+        this.$set(item, "isLoading", false);
+        this.$set(item, "aList", []);
+        this.$set(item, "timestamp", null);
       });
-      console.log(this.channels);
     },
     async onClick() {
-      this.finished = false;
-      this.timestamp = null;
-      this.list = [];
       this.onLoad();
     }
   },
