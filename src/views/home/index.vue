@@ -54,15 +54,16 @@
       </div>
     </van-row>
 
-		<!-- 弹出层 -->
-    <van-popup v-model="show" position="bottom" :style="{ height: '80%' }" />
-		
+    <!-- 操作频道面板的组件 -->
+    <popup v-model="show" />
   </div>
 </template>
 
 <script>
 import { apiGetChannels, apiGetAllChannels } from "@/api/channels.js";
 import apiGetArticles from "../../api/articles";
+import popup from "../../components/popup";
+import { join } from "path";
 
 export default {
   name: "home",
@@ -71,8 +72,8 @@ export default {
       value: "",
       icon: "\ue600 搜索",
       active: "",
-			channels: [],
-			show: false
+      channels: [],
+      show: true
     };
   },
   methods: {
@@ -110,8 +111,6 @@ export default {
       }
       channelList.aList = [...channelList.aList, ...res.results];
       channelList.timestamp = res.pre_timestamp;
-      console.log(channelList);
-
       channelList.loading = false;
 
       // // 异步更新数据
@@ -133,6 +132,7 @@ export default {
       // 判断用户是否登录
       let user = this.$store.state.user;
       if (!user) {
+        // 未登录
         // localStorage 中是否有频道数据
         let channels = JSON.parse(window.localStorage.getItem("channels"));
         if (channels) {
@@ -140,8 +140,13 @@ export default {
         } else {
           let res = await apiGetChannels();
           this.channels = res.channels;
+          window.localStorage.setItem(
+            "channels",
+            JSON.stringify(this.channels)
+          );
         }
       } else {
+        // 已登录
         let res = await apiGetChannels();
         this.channels = res.channels;
       }
@@ -157,15 +162,18 @@ export default {
     // 频道标签点击切换
     async onClick() {
       this.onLoad();
-		},
-		// 通过v-model控制弹出层是否展示
+    },
+    // 通过v-model控制弹出层是否展示
     showPopup() {
-			this.show = true
-		}
+      this.show = true;
+    }
   },
   created() {
     this.getChannels();
     apiGetAllChannels();
+  },
+  components: {
+    popup
   }
 };
 </script>
