@@ -19,10 +19,10 @@
       </van-cell>
 
       <van-grid :gutter="10">
-        <van-grid-item v-for="item in channels" :key="item.id" :text="item.name" class="iconbox">
+        <van-grid-item v-for="(item, index) in channels" :key="item.id" :text="item.name" class="iconbox">
           <template slot="icon">
             <div>
-              <van-icon name="cross" class="close" v-if="edit" />
+              <van-icon name="cross" class="close" v-if="edit" @click="del(index)" />
             </div>
           </template>
         </van-grid-item>
@@ -41,30 +41,45 @@ import { apiGetAllChannels } from "../api/channels";
 export default {
   data() {
     return {
-      channels: [],
       allChannels: [],
       edit: false
     };
   },
-  props: ["value"],
+  props: ["value", "channels"],
   methods: {
+    // 把 van-popup 传来的值传给 home
     off(value) {
       this.$emit("input", value);
     },
+
+    // 获取全部频道数据
     async getAllChannels() {
       let res = await apiGetAllChannels();
-      console.log(this.allChannels);
       let wd = this.channels.map(item => {
         return item.id;
       });
       this.allChannels = res.channels.filter(item => {
         return wd.indexOf(item.id) === -1;
       });
+    },
+
+    // 删除频道
+    del(i) {
+      let user = this.$store.state.user
+      if (user) {
+        console.log('已登录')
+      } else {
+        console.log(i)
+        this.channels.splice(i, 1)
+        window.localStorage.setItem('channels',JSON.stringify(this.channels))
+      }
     }
   },
+
   created() {
-    this.channels = JSON.parse(window.localStorage.getItem("channels"));
     this.getAllChannels();
+    console.log(this.channels);
+    
   }
 };
 </script>

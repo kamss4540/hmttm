@@ -55,7 +55,7 @@
     </van-row>
 
     <!-- 操作频道面板的组件 -->
-    <popup v-model="show" />
+    <popup v-model="show" :channels="channels" />
   </div>
 </template>
 
@@ -127,6 +127,7 @@ export default {
       //   }
       // }, 500)
     },
+    
     // 获取频道数据
     async getChannels() {
       // 判断用户是否登录
